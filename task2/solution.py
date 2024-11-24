@@ -7,39 +7,46 @@
 Содержимое результирующего файла:
 А,642
 Б,412
-В,....
+В
 Примечание:
 анализ текста производить не нужно, считается любая запись из категории
 (в ней может быть не только название, но и, например, род)
 """
 
-# solution.py
-
 import requests
 from bs4 import BeautifulSoup
 import csv
 from collections import defaultdict
-import string
 
 def get_animals_count():
-    url = "https://ru.wikipedia.org/wiki/Категория:Животные_по_алфавиту"
-    response = requests.get(url)
-
-    # Проверка успешности запроса
-    if response.status_code != 200:
-        raise Exception(f"Failed to fetch data from Wikipedia. Status code: {response.status_code}")
-
-    soup = BeautifulSoup(response.content, 'html.parser')
-
-    # Словарь для хранения количества животных по первой букве
+    base_url = "https://ru.wikipedia.org"
+    url = base_url + "/wiki/Категория:Животные_по_алфавиту"
     animals_count = defaultdict(int)
 
-    # Поиск всех ссылок на животных
-    for link in soup.find_all('a', class_='CategoryTreeLabel'):
-        text = link.text.strip()
-        if text and text[0].isalpha():
-            first_letter = text[0].upper()
-            animals_count[first_letter] += 1
+    while True:
+        response = requests.get(url)
+
+        # Проверка успешности запроса
+        if response.status_code != 200:
+            raise Exception(f"Failed to fetch data from Wikipedia. Status code: {response.status_code}")
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Поиск всех ссылок на животных
+        links = soup.select('div.mw-category-group a')
+
+        for link in links:
+            text = link.text.strip()
+            if text and text[0].isalpha():  # Проверяем, что текст не пуст и начинается с буквы
+                first_letter = text[0].upper()
+                animals_count[first_letter] += 1
+
+        # Поиск ссылки на следующую страницу
+        next_page = soup.find('a', string='Следующая страница')
+        if next_page:
+            url = base_url + next_page['href']  # Обновляем URL на следующую страницу
+        else:
+            break  # Если нет следующей страницы, выходим из цикла
 
     # Запись данных в CSV файл
     with open('beasts.csv', 'w', newline='', encoding='utf-8') as csvfile:
