@@ -8,6 +8,7 @@
 в декорируемых функциях будут следующих типов: bool, int, float, str Гарантируется,
 что в декорируемых функциях не будет значений параметров, заданных по умолчанию
 """
+
 def strict(func):
     def wrapper(*args, **kwargs):
         annotations = func.__annotations__
